@@ -1,21 +1,43 @@
-import GameCard from "@/components/GameCard";
-import { mockGames } from "@/data/products";
-import Image from "next/image";
+import GamesList from "@/components/GamesList";
+import { getProductos } from "@/utils/juegos/juegos";
+import { Suspense } from "react";
+import Skeleton from "./Skeleton";
 
-const ProductsByCategory = ({ params }) => {
-
-  const { categoria } = params;
-
-  const games = categoria === 'all' ? mockGames : mockGames.filter( game => game.category.toLowerCase() === categoria.toLowerCase() );
-  return (
-    <div className="p-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-
-      {games.map( game => (
-        <GameCard key={game.id} game={game} />
-      ))}
-
-    </div>
-  )
+export const metadata = {
+  title: "Store",
+  description: "Home page",
 }
 
-export default ProductsByCategory
+export const generateStaticParams = () => {
+  return [
+    { categoria: "ps4" },
+    { categoria: "ps5" },
+    { categoria: "xbox"  },
+    { categoria: "ns"  },
+    { categoria: "pc"  },
+  ];
+};
+export const revalidate = 3600; // 1 hora
+
+const ProductsByCategory = async ({ params, searchParams }) => {
+  const { categoria } = params;  
+  const { nombre } = searchParams;
+
+  const games = await getProductos(categoria.toLowerCase(), nombre);  
+
+  return (
+    <>      
+      {games.length === 0 ? (
+        <p className="text-center text-2xl font-semibold alturaMinima ">
+          Lo sentimos, no tenemos productos de esta plataforma.
+        </p>
+      ) : (        
+        <Suspense fallback={<Skeleton />}>
+          <GamesList games={games} params={params} />       
+        </Suspense>
+      )}
+    </>
+  );
+};
+
+export default ProductsByCategory;
